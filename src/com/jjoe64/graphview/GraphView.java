@@ -20,8 +20,11 @@
 package com.jjoe64.graphview;
 
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -64,7 +67,7 @@ abstract public class GraphView extends LinearLayout {
 		 */
 		public GraphViewContentView(Context context) {
 			super(context);
-			setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
+			setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 		}
 
 		/**
@@ -92,9 +95,13 @@ abstract public class GraphView extends LinearLayout {
 			if (labelTextHeight == null || horLabelTextWidth == null) {
 				paint.setTextSize(getGraphViewStyle().getTextSize());
 				double testX = ((getMaxX(true)-getMinX(true))*0.783)+getMinX(true);
-				String testLabel = formatLabel(testX, true);
+				String testLabel;
+				if (fractionize)
+					testLabel = formatLabel(testX, true, numOfFractionDigits);
+				else
+					testLabel = formatLabel(testX, true);
 				paint.getTextBounds(testLabel, 0, testLabel.length(), textBounds);
-				labelTextHeight = (textBounds.height());
+				labelTextHeight = (textBounds.width());
 				horLabelTextWidth = (textBounds.width());
 			}
 			border += labelTextHeight;
@@ -125,12 +132,16 @@ abstract public class GraphView extends LinearLayout {
 				float x = ((graphwidth / hors) * i) + horstart;
 				canvas.drawLine(x, height - border, x, border, paint);
 				paint.setTextAlign(Align.CENTER);
-				if (i==horlabels.length-1)
-					paint.setTextAlign(Align.RIGHT);
-				if (i==0)
-					paint.setTextAlign(Align.LEFT);
+//				if (i==horlabels.length-1)
+//					paint.setTextAlign(Align.RIGHT);
+//				if (i==0)
+//					paint.setTextAlign(Align.LEFT);
 				paint.setColor(graphViewStyle.getHorizontalLabelsColor());
-				canvas.drawText(horlabels[i], x, height - 4, paint);
+//				canvas.drawText(horlabels[i], x, height - 4, paint);
+				canvas.save();
+				canvas.rotate(-90, x, height - (labelTextHeight/2));
+				canvas.drawText(horlabels[i], x, height - (labelTextHeight/2), paint);
+				canvas.restore();
 			}
 
 			paint.setTextAlign(Align.CENTER);
@@ -260,7 +271,7 @@ abstract public class GraphView extends LinearLayout {
 			super(context);
 			setLayoutParams(new LayoutParams(
 					getGraphViewStyle().getVerticalLabelsWidth()==0?100:getGraphViewStyle().getVerticalLabelsWidth()
-							, LayoutParams.FILL_PARENT));
+							, LayoutParams.MATCH_PARENT));
 		}
 
 		/**
@@ -275,17 +286,21 @@ abstract public class GraphView extends LinearLayout {
 			if (labelTextHeight == null || verLabelTextWidth == null) {
 				paint.setTextSize(getGraphViewStyle().getTextSize());
 				double testY = ((getMaxY()-getMinY())*0.783)+getMinY();
-				String testLabel = formatLabel(testY, false);
+				String testLabel;
+				if (fractionize)
+					testLabel = formatLabel(testY, false, numOfFractionDigits);
+				else
+					testLabel = formatLabel(testY, false);
 				paint.getTextBounds(testLabel, 0, testLabel.length(), textBounds);
 				labelTextHeight = (textBounds.height());
 				verLabelTextWidth = (textBounds.width());
 			}
 			if (getGraphViewStyle().getVerticalLabelsWidth()==0 && getLayoutParams().width != verLabelTextWidth+GraphViewConfig.BORDER) {
 				setLayoutParams(new LayoutParams(
-						(int) (verLabelTextWidth+GraphViewConfig.BORDER), LayoutParams.FILL_PARENT));
+						(int) (verLabelTextWidth+GraphViewConfig.BORDER), LayoutParams.MATCH_PARENT));
 			} else if (getGraphViewStyle().getVerticalLabelsWidth()!=0 && getGraphViewStyle().getVerticalLabelsWidth() != getLayoutParams().width) {
 				setLayoutParams(new LayoutParams(
-						getGraphViewStyle().getVerticalLabelsWidth(), LayoutParams.FILL_PARENT));
+						getGraphViewStyle().getVerticalLabelsWidth(), LayoutParams.MATCH_PARENT));
 			}
 
 			float border = GraphViewConfig.BORDER;
@@ -332,10 +347,14 @@ abstract public class GraphView extends LinearLayout {
 	private CustomLabelFormatter customLabelFormatter;
 	private Integer labelTextHeight;
 	private Integer horLabelTextWidth;
-	private Integer verLabelTextWidth;
+	public Integer verLabelTextWidth;
 	private final Rect textBounds = new Rect();
 	private boolean staticHorizontalLabels;
 	private boolean staticVerticalLabels;
+	private SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.US);
+	private boolean hasDatesAtX = false;
+	private int numOfFractionDigits = 0;
+	private boolean fractionize = false;
 
 	public GraphView(Context context, AttributeSet attrs) {
 		this(context, attrs.getAttributeValue(null, "title"));
@@ -351,7 +370,7 @@ abstract public class GraphView extends LinearLayout {
 	 */
 	public GraphView(Context context, String title) {
 		super(context);
-		setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
+		setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
 		if (title == null)
 			title = "";
@@ -366,7 +385,7 @@ abstract public class GraphView extends LinearLayout {
 		viewVerLabels = new VerLabelsView(context);
 		addView(viewVerLabels);
 		graphViewContentView = new GraphViewContentView(context);
-		addView(graphViewContentView, new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT, 1));
+		addView(graphViewContentView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, 1));
 	}
 
 	private GraphViewDataInterface[] _values(int idxSeries) {
@@ -418,7 +437,7 @@ abstract public class GraphView extends LinearLayout {
 		float lTop;
 		switch (legendAlign) {
 		case TOP:
-			lTop = 10;
+			lTop = 50;
 			break;
 		case MIDDLE:
 			lTop = height/2 - legendHeight/2;
@@ -480,6 +499,24 @@ abstract public class GraphView extends LinearLayout {
 		return numberformatter[i].format(value);
 	}
 
+	protected String formatLabel(double value, boolean isValueX, int numOfFractionDigits) {
+		return fractionizer(formatLabel(value, isValueX), numOfFractionDigits);
+	}
+	
+	private String fractionizer(String value, int numOfFractionDigits) {
+		StringBuilder result = new StringBuilder();
+		String[] splittedValue = value.split("\\.");
+		result.append(splittedValue[0]);
+		if (splittedValue.length > 1 && numOfFractionDigits>0) {
+			result.append(".");
+			if (splittedValue[1].length() > numOfFractionDigits)
+				result.append(splittedValue[1].substring(0, numOfFractionDigits));
+			else
+				result.append(splittedValue[1]);
+		}
+		return result.toString();
+	}
+
 	private String[] generateHorlabels(float graphwidth) {
 		int numLabels = getGraphViewStyle().getNumHorizontalLabels()-1;
 		if (numLabels < 0) {
@@ -490,7 +527,17 @@ abstract public class GraphView extends LinearLayout {
 		double min = getMinX(false);
 		double max = getMaxX(false);
 		for (int i=0; i<=numLabels; i++) {
-			labels[i] = formatLabel(min + ((max-min)*i/numLabels), true);
+			double value = min + ((max-min)*i/numLabels);
+			if (!hasDatesAtX) {
+				if (fractionize)
+					labels[i] = formatLabel(value, true, numOfFractionDigits);
+				else
+					labels[i] = formatLabel(value, true);
+			}
+			else {
+				Date date = new Date((long)value);
+				labels[i] = dateFormat.format(date);
+			}
 		}
 		return labels;
 	}
@@ -516,7 +563,10 @@ abstract public class GraphView extends LinearLayout {
 		}
 
 		for (int i=0; i<=numLabels; i++) {
-			labels[numLabels-i] = formatLabel(min + ((max-min)*i/numLabels), false);
+			if (fractionize)
+				labels[numLabels-i] = formatLabel(min + ((max-min)*i/numLabels), false, numOfFractionDigits);
+			else
+				labels[numLabels-i] = formatLabel(min + ((max-min)*i/numLabels), false);
 		}
 		return labels;
 	}
@@ -883,5 +933,26 @@ abstract public class GraphView extends LinearLayout {
 	public void setViewPort(double start, double size) {
 		viewportStart = start;
 		viewportSize = size;
+	}
+	
+	public void setDefaultDateFormat(SimpleDateFormat dateFormat) {
+		this.dateFormat = dateFormat;
+	}
+	
+	public SimpleDateFormat getDefaultDateFormat() {
+		return dateFormat;
+	}
+	
+	public void setDrawDates(boolean hasDatesAtX) {
+		this.hasDatesAtX = hasDatesAtX;
+	}
+	
+	public boolean getDrawDates() {
+		return hasDatesAtX;
+	}
+	
+	public void setNumOfFractionDigitsAtYAxis(int numOfFractionDigits) {
+		this.numOfFractionDigits = numOfFractionDigits;
+		this.fractionize = true;
 	}
 }
