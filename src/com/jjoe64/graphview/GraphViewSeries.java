@@ -63,7 +63,7 @@ public class GraphViewSeries {
 	final String description;
 	final GraphViewSeriesStyle style;
 	GraphViewDataInterface[] values;
-	private long WEEK = 7 * 24 * 24 * 60 * 1000;
+	private long SHIFT_PERIOD = 4 * 7 * 24 * 24 * 60 * 1000;
 	private final List<GraphView> graphViews = new ArrayList<GraphView>();
 
 	public GraphViewSeries(GraphViewDataInterface[] values) {
@@ -80,11 +80,11 @@ public class GraphViewSeries {
 		}
 		this.style = style;
 		GraphViewDataInterface[] values = new GraphViewDataInterface[oldValues.length+2];
-		values[0] = new GraphViewData(oldValues[0].getX()-WEEK, oldValues[0].getY());
+		values[0] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD, oldValues[0].getY());
 		for (int i=0; i < oldValues.length ; i++) {
 			values[i+1] = oldValues[i];
 		}
-		values[values.length-1] = new GraphViewData(oldValues[oldValues.length-1].getX()+WEEK, oldValues[oldValues.length-1].getY());
+		values[values.length-1] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD, oldValues[oldValues.length-1].getY());
 		this.values = values;
 	}
 
