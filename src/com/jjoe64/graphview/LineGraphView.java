@@ -19,8 +19,6 @@
 
 package com.jjoe64.graphview;
 
-import java.util.ArrayList;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -39,12 +37,6 @@ import com.jjoe64.graphview.GraphViewSeries.GraphViewSeriesStyle;
 public class LineGraphView extends GraphView {
 	private final Paint paintBackground;
 	private boolean drawBackground;
-	private boolean drawCircles = false;
-	private ArrayList<String> popupStrings = new ArrayList<String>();
-	private ArrayList<PointF> popupXYs = new ArrayList<PointF>();
-	private int TOUCH_RADIUS = 20;
-	private AlertDialog builder;
-	private TextView tv;
 
 	public LineGraphView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -64,8 +56,8 @@ public class LineGraphView extends GraphView {
 
 	@Override
 	public void drawSeries(Canvas canvas, GraphViewDataInterface[] values, float graphwidth, float graphheight, float border, double minX, double minY, double diffX, double diffY, float horstart, GraphViewSeriesStyle style) {
-		popupXYs.clear();
-	
+		LGpopupXYs.clear();
+
 		// draw background
 		double lastEndY = 0;
 		double lastEndX = 0;
@@ -111,6 +103,7 @@ public class LineGraphView extends GraphView {
 
 		lastEndY = 0;
 		lastEndX = 0;
+		LGtempPopupXYs.clear();
 		for (int i = 0; i < values.length; i++) {
 			double valY = values[i].getY() - minY;
 			double ratY = valY / diffY;
@@ -122,43 +115,29 @@ public class LineGraphView extends GraphView {
 
 			float endX = (float) x + (horstart + 1);
 			float endY = (float) (border - y) + graphheight;
-			if (i > 1 && i < values.length-1) {
+			if (values[i].getX() > GraphViewSeries.firstX && values[i].getX() < GraphViewSeries.lastX) {
+				LGtempPopupXYs.add(new PointF((float)values[i].getX(), (float)values[i].getY()));
+				if (lastEndX == 0 && lastEndY == 0) {
+					lastEndX = x;
+					lastEndY = y;
+				}
 				float startX = (float) lastEndX + (horstart + 1);
 				float startY = (float) (border - lastEndY) + graphheight;
 				
 				canvas.drawLine(startX, startY, endX, endY, paint);
+				if (LGdrawCircles) {
+					canvas.drawCircle((float)(x), (float)(graphheight - y + border), 5, paint);
+					LGpopupXYs.add(new PointF((float)(x + verLabelTextWidth + 20), (float)(graphheight - y + border)));
+				}
+				lastEndY = y;
+				lastEndX = x;
 			}
-			if (drawCircles && (i > 0 && i < values.length-1)) {
-				canvas.drawCircle((float)(x), (float)(graphheight - y + border), 5, paint);
-				popupXYs.add(new PointF((float)(x + verLabelTextWidth + 30), (float)(graphheight - y + border)));
-			}
-			lastEndY = y;
-			lastEndX = x;
 		}
 	}
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		if (drawCircles) {
-			float x = event.getX();
-			float y = event.getY();
-			for (int i=0; i<popupXYs.size(); i++) {
-				float pointX = popupXYs.get(i).x;
-				float pointY = popupXYs.get(i).y;
-				if ((pointX >= x-TOUCH_RADIUS && pointX <= x+TOUCH_RADIUS)
-						&& (pointY >= y-TOUCH_RADIUS && pointY <= y+TOUCH_RADIUS)) {
-					showPopup(i);
-					return false;
-				}
-			}
-		}
-		return super.onTouchEvent(event);
-	}
-
-	private void showPopup(int i) {
-		String message = popupStrings.get(i);
-		tv.setText(message);
-		builder.show();
+		return touchPoints(event, true);
 	}
 
 	public int getBackgroundColor() {
@@ -170,7 +149,7 @@ public class LineGraphView extends GraphView {
 	}
 
 	public boolean getDrawCircles() {
-		return drawCircles;
+		return LGdrawCircles;
 	}
 
 	@Override
@@ -186,12 +165,11 @@ public class LineGraphView extends GraphView {
 	}
 
 	public void setDrawCircles(boolean drawCircles) {
-		this.drawCircles = drawCircles;
+		this.LGdrawCircles = drawCircles;
 	}
 
-	public void setPopupStrings(ArrayList<String> popupStrings, AlertDialog builder, TextView tv) {
-		this.popupStrings = popupStrings;
-		this.builder = builder;
-		this.tv = tv;
+	public void setPopupBuilder(AlertDialog builder, TextView tv) {
+		this.LG_builder = builder;
+		this.LG_tv = tv;
 	}
 }

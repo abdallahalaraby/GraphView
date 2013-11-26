@@ -26,17 +26,21 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphViewSeries.GraphViewSeriesStyle;
 import com.jjoe64.graphview.compatible.ScaleGestureDetector;
@@ -102,10 +106,10 @@ abstract public class GraphView extends LinearLayout {
 					testLabel = formatLabel(testX, true);
 				paint.getTextBounds(testLabel, 0, testLabel.length(), textBounds);
 				labelTextHeight = (textBounds.width());
+				topAndBottomShift = (textBounds.width());
 				horLabelTextWidth = (textBounds.width());
 			}
 			border += labelTextHeight;
-
 			float graphheight = height - (2 * border);
 			graphwidth = width;
 
@@ -167,6 +171,15 @@ abstract public class GraphView extends LinearLayout {
 			}
 
 			if (showLegend) drawLegend(canvas, height, width);
+			// The firstDraw checks if this is the first time we draw the graph, and it redraws it all over again
+			if (firstDraw) { // FIXME: we shouldn't redraw the whole graph,
+								// instead we have to find the cause to the high
+								// value of "graphheight" at the first time it is drawn
+				firstDraw=false;
+				if (scrollable) // Trigger the move action to redraw the graph correctly
+					onMoveGesture(0);
+				redrawAll();
+			}
 		}
 
 		private void onMoveGesture(float f) {
@@ -217,6 +230,7 @@ abstract public class GraphView extends LinearLayout {
 					scrollingStarted = false;
 					lastTouchEventX = 0;
 					handled = true;
+					touchPoints(event, false);
 				}
 				if ((event.getAction() & MotionEvent.ACTION_MOVE) == MotionEvent.ACTION_MOVE) {
 					if (scrollingStarted) {
@@ -277,6 +291,7 @@ abstract public class GraphView extends LinearLayout {
 		/**
 		 * @param canvas
 		 */
+		@SuppressLint("DrawAllocation")
 		@Override
 		protected void onDraw(Canvas canvas) {
 			// normal
@@ -304,7 +319,10 @@ abstract public class GraphView extends LinearLayout {
 			}
 
 			float border = GraphViewConfig.BORDER;
-			border += labelTextHeight;
+			if (topAndBottomShift==null)
+				border += labelTextHeight;
+			else
+				border += topAndBottomShift;
 			float height = getHeight();
 			float graphheight = height - (2 * border);
 
@@ -345,6 +363,7 @@ abstract public class GraphView extends LinearLayout {
 	private GraphViewStyle graphViewStyle;
 	private final GraphViewContentView graphViewContentView;
 	private CustomLabelFormatter customLabelFormatter;
+	private Integer topAndBottomShift;
 	private Integer labelTextHeight;
 	private Integer horLabelTextWidth;
 	public Integer verLabelTextWidth;
@@ -355,6 +374,15 @@ abstract public class GraphView extends LinearLayout {
 	private boolean hasDatesAtX = false;
 	private int numOfFractionDigits = 0;
 	private boolean fractionize = false;
+	boolean firstDraw=true;
+	protected long SHIFT_PERIOD = 4 * 7 * 24 * 24 * 60 * 1000;
+	
+	protected boolean LGdrawCircles = false;
+	protected ArrayList<PointF> LGpopupXYs = new ArrayList<PointF>();
+	protected ArrayList<PointF> LGtempPopupXYs = new ArrayList<PointF>();
+	protected int LG_TOUCH_RADIUS = 20;
+	protected AlertDialog LG_builder;
+	protected TextView LG_tv;
 
 	public GraphView(Context context, AttributeSet attrs) {
 		this(context, attrs.getAttributeValue(null, "title"));
@@ -389,7 +417,7 @@ abstract public class GraphView extends LinearLayout {
 	}
 
 	private GraphViewDataInterface[] _values(int idxSeries) {
-		GraphViewDataInterface[] values = graphSeries.get(idxSeries).values;
+		final GraphViewDataInterface[] values = graphSeries.get(idxSeries).values;
 		synchronized (values) {
 			if (viewportStart == 0 && viewportSize == 0) {
 				// all data
@@ -544,8 +572,8 @@ abstract public class GraphView extends LinearLayout {
 
 	synchronized private String[] generateVerlabels(float graphheight) {
 		int numLabels = getGraphViewStyle().getNumVerticalLabels()-1;
-		if (numLabels < 0) {
-			numLabels = (int) (graphheight/(labelTextHeight*3));
+		if (numLabels <= 0) {
+			numLabels = (int) (graphheight/(textBounds.height()*3));
 		}
 		String[] labels = new String[numLabels+1];
 		double min = getMinY();
@@ -859,6 +887,9 @@ abstract public class GraphView extends LinearLayout {
 	 * @param scalable
 	 */
 	synchronized public void setScalable(boolean scalable) {
+		if (viewportSize==0) {
+			viewportSize = getMaxX(true) - getMinX(true);
+		}
 		this.scalable = scalable;
 		if (scalable == true && scaleDetector == null) {
 			scrollable = true; // automatically forces this
@@ -888,11 +919,39 @@ abstract public class GraphView extends LinearLayout {
 							viewportSize = maxX - viewportStart;
 						}
 					}
+					firstDraw = true;
 					redrawAll();
 					return true;
 				}
 			});
 		}
+	}
+
+	protected boolean touchPoints(MotionEvent event, boolean callSuper) {
+		if (LGdrawCircles) {
+			float x = event.getX();
+			float y = event.getY();
+			for (int i=0; i<LGpopupXYs.size(); i++) {
+				float pointX = LGpopupXYs.get(i).x;
+				if (!callSuper)
+					pointX -= 40;
+				float pointY = LGpopupXYs.get(i).y;
+				if ((pointX >= x-LG_TOUCH_RADIUS && pointX <= x+LG_TOUCH_RADIUS)
+						&& (pointY >= y-LG_TOUCH_RADIUS && pointY <= y+LG_TOUCH_RADIUS)) {
+					showPopup(LGtempPopupXYs.get(i));
+					return false;
+				}
+			}
+		}
+		if (callSuper)
+			return super.onTouchEvent(event);
+		else return false;
+	}
+
+	private void showPopup(PointF point) {
+		String message = GraphViewSeries.LGpopupStrings.get(point.x + ", " + point.y);
+		LG_tv.setText(message);
+		LG_builder.show();
 	}
 
 	/**

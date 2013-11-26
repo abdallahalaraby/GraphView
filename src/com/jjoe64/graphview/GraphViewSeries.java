@@ -20,6 +20,7 @@
 package com.jjoe64.graphview;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.jjoe64.graphview.GraphView.GraphViewData;
@@ -63,8 +64,10 @@ public class GraphViewSeries {
 	final String description;
 	final GraphViewSeriesStyle style;
 	GraphViewDataInterface[] values;
-	private long SHIFT_PERIOD = 4 * 7 * 24 * 24 * 60 * 1000;
+	protected long SHIFT_PERIOD = 4 * 7 * 24 * 24 * 60 * 1000;
 	private final List<GraphView> graphViews = new ArrayList<GraphView>();
+	public static double firstX, lastX;
+	public static HashMap<String, String> LGpopupStrings = new HashMap<String, String>();
 
 	public GraphViewSeries(GraphViewDataInterface[] values) {
 		description = null;
@@ -86,6 +89,15 @@ public class GraphViewSeries {
 		}
 		values[values.length-1] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD, oldValues[oldValues.length-1].getY());
 		this.values = values;
+		GraphViewSeries.firstX = oldValues[0].getX()-SHIFT_PERIOD;
+		GraphViewSeries.lastX = oldValues[oldValues.length-1].getX()+SHIFT_PERIOD;
+	}
+	
+	public GraphViewSeries(String description, GraphViewSeriesStyle style, GraphViewDataInterface[] values, ArrayList<String> popupStrings) {
+		this(description, style, values);
+		for (int i=0; i < values.length ; i++) {
+			GraphViewSeries.LGpopupStrings.put((float)values[i].getX() + ", " + (float)values[i].getY(), popupStrings.get(i));
+		}
 	}
 
 	/**
