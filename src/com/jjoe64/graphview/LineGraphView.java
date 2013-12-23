@@ -55,7 +55,7 @@ public class LineGraphView extends GraphView {
 	}
 
 	@Override
-	public void drawSeries(Canvas canvas, GraphViewDataInterface[] values, float graphwidth, float graphheight, float border, double minX, double minY, double diffX, double diffY, float horstart, GraphViewSeriesStyle style) {
+	public void drawSeries(Canvas canvas, GraphViewDataInterface[] values, float graphwidth, float graphheight, float border, double minX, double minY, double diffX, double diffY, float horstart, GraphViewSeriesStyle style, boolean setPadding) {
 		LGpopupXYs.clear();
 
 		// draw background
@@ -115,7 +115,7 @@ public class LineGraphView extends GraphView {
 
 			float endX = (float) x + (horstart + 1);
 			float endY = (float) (border - y) + graphheight;
-			if (values[i].getX() > GraphViewSeries.firstX && values[i].getX() < GraphViewSeries.lastX) {
+			if (!setPadding || (values[i].getX() > GraphViewSeries.firstX && values[i].getX() < GraphViewSeries.lastX)) {
 				LGtempPopupXYs.add(new PointF((float)values[i].getX(), (float)values[i].getY()));
 				if (lastEndX == 0 && lastEndY == 0) {
 					lastEndX = x;
