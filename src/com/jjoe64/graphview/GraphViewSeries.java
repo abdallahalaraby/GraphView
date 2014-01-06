@@ -20,7 +20,6 @@
 package com.jjoe64.graphview;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import com.jjoe64.graphview.GraphView.GraphViewData;
@@ -67,7 +66,6 @@ public class GraphViewSeries {
 	public static final long SHIFT_PERIOD = 4 * 7 * 24 * 24 * 60 * 1000;
 	private final List<GraphView> graphViews = new ArrayList<GraphView>();
 	public static double firstX, lastX;
-	public static HashMap<String, String> LGpopupStrings = new HashMap<String, String>();
 	protected boolean setPadding = true;
 
 	public GraphViewSeries(GraphViewDataInterface[] values) {
@@ -86,28 +84,21 @@ public class GraphViewSeries {
 		this.style = style;
 		if (setPadding) {
 			GraphViewDataInterface[] values = new GraphViewDataInterface[oldValues.length+2];
-			values[0] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD, oldValues[0].getY());
+			values[0] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD, oldValues[0].getY(), null);
 			for (int i=0; i < oldValues.length ; i++) {
 				values[i+1] = oldValues[i];
 			}
-			values[values.length-1] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD, oldValues[oldValues.length-1].getY());
+			values[values.length-1] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD, oldValues[oldValues.length-1].getY(), null);
 			this.values = values;
 			GraphViewSeries.firstX = oldValues[0].getX()-SHIFT_PERIOD;
 			GraphViewSeries.lastX = oldValues[oldValues.length-1].getX()+SHIFT_PERIOD;
 		} else {
 			GraphViewDataInterface[] values = new GraphViewDataInterface[4];
-			values[0] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD-1, oldValues[0].getY());
-			values[1] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD-1, oldValues[0].getY());
-			values[2] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD+1, oldValues[oldValues.length-1].getY());
-			values[3] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD+1, oldValues[oldValues.length-1].getY());
+			values[0] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD-1, oldValues[0].getY(), null);
+			values[1] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD-1, oldValues[0].getY(), null);
+			values[2] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD+1, oldValues[oldValues.length-1].getY(), null);
+			values[3] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD+1, oldValues[oldValues.length-1].getY(), null);
 			this.values = values;
-		}
-	}
-	
-	public GraphViewSeries(String description, GraphViewSeriesStyle style, GraphViewDataInterface[] values, ArrayList<String> popupStrings, boolean setPadding) {
-		this(description, style, values, setPadding);
-		for (int i=0; i < values.length ; i++) {
-			GraphViewSeries.LGpopupStrings.put((float)values[i].getX() + ", " + (float)values[i].getY(), popupStrings.get(i));
 		}
 	}
 

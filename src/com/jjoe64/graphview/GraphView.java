@@ -33,7 +33,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
-import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
@@ -258,10 +257,14 @@ abstract public class GraphView extends LinearLayout {
 	static public class GraphViewData implements GraphViewDataInterface {
 		public final double valueX;
 		public final double valueY;
-		public GraphViewData(double valueX, double valueY) {
+		public final String popupString;
+		public float popupX;
+		public float popupY;
+		public GraphViewData(double valueX, double valueY, String popupString) {
 			super();
 			this.valueX = valueX;
 			this.valueY = valueY;
+			this.popupString = popupString;
 		}
 		@Override
 		public double getX() {
@@ -270,6 +273,26 @@ abstract public class GraphView extends LinearLayout {
 		@Override
 		public double getY() {
 			return valueY;
+		}
+		@Override
+		public String getPopupString() {
+			return popupString;
+		}
+		@Override
+		public float getPopupX() {
+			return popupX;
+		}
+		@Override
+		public float getPopupY() {
+			return popupY;
+		}
+		@Override
+		public void setPopupX(float popupX) {
+			this.popupX = popupX;
+		}
+		@Override
+		public void setPopupY(float popupY) {
+			this.popupY = popupY;
 		}
 	}
 
@@ -378,8 +401,9 @@ abstract public class GraphView extends LinearLayout {
 	protected long SHIFT_PERIOD = 4 * 7 * 24 * 24 * 60 * 1000;
 	
 	protected boolean LGdrawCircles = false;
-	protected ArrayList<PointF> LGpopupXYs = new ArrayList<PointF>();
-	protected ArrayList<PointF> LGtempPopupXYs = new ArrayList<PointF>();
+//	protected ArrayList<PointF> LGpopupXYs = new ArrayList<PointF>();
+//	protected ArrayList<PointF> LGtempPopupXYs = new ArrayList<PointF>();
+	ArrayList<GraphViewDataInterface> LGPoints = new ArrayList<GraphViewDataInterface>();
 	protected int LG_TOUCH_RADIUS = 20;
 	protected AlertDialog LG_builder;
 	protected TextView LG_tv;
@@ -931,14 +955,14 @@ abstract public class GraphView extends LinearLayout {
 		if (LGdrawCircles) {
 			float x = event.getX();
 			float y = event.getY();
-			for (int i=0; i<LGpopupXYs.size(); i++) {
-				float pointX = LGpopupXYs.get(i).x;
+			for (int i=0; i<LGPoints.size(); i++) {
+				float pointX = LGPoints.get(i).getPopupX();
 				if (!callSuper)
 					pointX -= 40;
-				float pointY = LGpopupXYs.get(i).y;
+				float pointY = LGPoints.get(i).getPopupY();
 				if ((pointX >= x-LG_TOUCH_RADIUS && pointX <= x+LG_TOUCH_RADIUS)
 						&& (pointY >= y-LG_TOUCH_RADIUS && pointY <= y+LG_TOUCH_RADIUS)) {
-					showPopup(LGtempPopupXYs.get(i));
+					showPopup(LGPoints.get(i).getPopupString());
 					return false;
 				}
 			}
@@ -948,8 +972,7 @@ abstract public class GraphView extends LinearLayout {
 		else return false;
 	}
 
-	private void showPopup(PointF point) {
-		String message = GraphViewSeries.LGpopupStrings.get(point.x + ", " + point.y);
+	private void showPopup(String message) {
 		LG_tv.setText(message);
 		LG_builder.show();
 	}

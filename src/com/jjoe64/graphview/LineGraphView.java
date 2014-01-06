@@ -24,7 +24,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.TextView;
@@ -56,7 +55,6 @@ public class LineGraphView extends GraphView {
 
 	@Override
 	public void drawSeries(Canvas canvas, GraphViewDataInterface[] values, float graphwidth, float graphheight, float border, double minX, double minY, double diffX, double diffY, float horstart, GraphViewSeriesStyle style, boolean setPadding) {
-		LGpopupXYs.clear();
 
 		// draw background
 		double lastEndY = 0;
@@ -103,7 +101,6 @@ public class LineGraphView extends GraphView {
 
 		lastEndY = 0;
 		lastEndX = 0;
-		LGtempPopupXYs.clear();
 		for (int i = 0; i < values.length; i++) {
 			double valY = values[i].getY() - minY;
 			double ratY = valY / diffY;
@@ -116,7 +113,7 @@ public class LineGraphView extends GraphView {
 			float endX = (float) x + (horstart + 1);
 			float endY = (float) (border - y) + graphheight;
 			if (!setPadding || (values[i].getX() > GraphViewSeries.firstX && values[i].getX() < GraphViewSeries.lastX)) {
-				LGtempPopupXYs.add(new PointF((float)values[i].getX(), (float)values[i].getY()));
+//				LGtempPopupXYs.add(new PointF((float)values[i].getX(), (float)values[i].getY()));
 				if (lastEndX == 0 && lastEndY == 0) {
 					lastEndX = x;
 					lastEndY = y;
@@ -127,7 +124,9 @@ public class LineGraphView extends GraphView {
 				canvas.drawLine(startX, startY, endX, endY, paint);
 				if (LGdrawCircles) {
 					canvas.drawCircle((float)(x), (float)(graphheight - y + border), 5, paint);
-					LGpopupXYs.add(new PointF((float)(x + verLabelTextWidth + 20), (float)(graphheight - y + border)));
+					values[i].setPopupX((float)(x + verLabelTextWidth + 20));
+					values[i].setPopupY((float)(graphheight - y + border));
+					LGPoints.add(values[i]);
 				}
 				lastEndY = y;
 				lastEndX = x;

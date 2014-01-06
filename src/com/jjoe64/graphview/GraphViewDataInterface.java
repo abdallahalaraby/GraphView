@@ -27,4 +27,9 @@ package com.jjoe64.graphview;
 public interface GraphViewDataInterface {
 	public double getX();
 	public double getY();
+	public String getPopupString();
+	public float getPopupX();
+	public float getPopupY();
+	public void setPopupX(float popupX);
+	public void setPopupY(float popupY);
 }
