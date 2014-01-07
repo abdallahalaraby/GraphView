@@ -22,6 +22,8 @@ package com.jjoe64.graphview;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.util.Log;
+
 import com.jjoe64.graphview.GraphView.GraphViewData;
 
 /**
@@ -63,7 +65,8 @@ public class GraphViewSeries {
 	final String description;
 	final GraphViewSeriesStyle style;
 	GraphViewDataInterface[] values;
-	public static final long SHIFT_PERIOD = 4 * 7 * 24 * 24 * 60 * 1000;
+//	public double SHIFT_PERIOD = 1;
+	public double SHIFT_PERIOD = 4 * 7 * 24 * 24 * 60 * 1000;
 	private final List<GraphView> graphViews = new ArrayList<GraphView>();
 	public static double firstX, lastX;
 	protected boolean setPadding = true;
@@ -82,6 +85,7 @@ public class GraphViewSeries {
 			style = new GraphViewSeriesStyle();
 		}
 		this.style = style;
+//		SHIFT_PERIOD = getXShift(oldValues);
 		if (setPadding) {
 			GraphViewDataInterface[] values = new GraphViewDataInterface[oldValues.length+2];
 			values[0] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD, oldValues[0].getY(), null);
@@ -94,13 +98,36 @@ public class GraphViewSeries {
 			GraphViewSeries.lastX = oldValues[oldValues.length-1].getX()+SHIFT_PERIOD;
 		} else {
 			GraphViewDataInterface[] values = new GraphViewDataInterface[4];
-			values[0] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD-1, oldValues[0].getY(), null);
-			values[1] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD-1, oldValues[0].getY(), null);
-			values[2] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD+1, oldValues[oldValues.length-1].getY(), null);
-			values[3] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD+1, oldValues[oldValues.length-1].getY(), null);
+			values[0] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD-1, oldValues[0].getY()-2, null);
+			values[1] = new GraphViewData(oldValues[0].getX()-SHIFT_PERIOD-1, oldValues[0].getY(), oldValues[0].getPopupString());
+			values[2] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD+1, oldValues[oldValues.length-1].getY(), oldValues[oldValues.length-1].getPopupString());
+			values[3] = new GraphViewData(oldValues[oldValues.length-1].getX()+SHIFT_PERIOD+1, oldValues[oldValues.length-1].getY()-2, null);
 			this.values = values;
 		}
 	}
+	
+	// NOT USER YET
+	public double getXShift(GraphViewDataInterface[] values) {
+		MinMax minMaxX = getMinMaxX(values);
+		return ((minMaxX.max - minMaxX.min)/values.length) + minMaxX.min;
+	}
+	
+	public MinMax getMinMaxX(GraphViewDataInterface[] values) {
+		double minX=0, maxX=0;
+		for (int i = 0; i < values.length; i++) {
+			GraphViewDataInterface value = values[i];
+			if (i==0)
+				minX = value.getX();
+			if (value.getX()<minX)
+				minX = value.getX();
+			else if (value.getX()>maxX)
+				maxX = value.getX();
+		}
+		Log.i("min, max", minX + ", " + maxX);
+		MinMax minMaxX = new MinMax(minX, maxX);
+		return minMaxX;
+	}
+	
 
 	/**
 	 * this graphview will be redrawn if data changes

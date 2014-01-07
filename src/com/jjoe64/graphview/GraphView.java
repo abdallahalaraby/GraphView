@@ -398,7 +398,6 @@ abstract public class GraphView extends LinearLayout {
 	private int numOfFractionDigits = 0;
 	private boolean fractionize = false;
 	boolean firstDraw=true;
-	protected long SHIFT_PERIOD = 4 * 7 * 24 * 24 * 60 * 1000;
 	
 	protected boolean LGdrawCircles = false;
 //	protected ArrayList<PointF> LGpopupXYs = new ArrayList<PointF>();

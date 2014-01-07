@@ -112,7 +112,7 @@ public class LineGraphView extends GraphView {
 
 			float endX = (float) x + (horstart + 1);
 			float endY = (float) (border - y) + graphheight;
-			if (!setPadding || (values[i].getX() > GraphViewSeries.firstX && values[i].getX() < GraphViewSeries.lastX)) {
+			if ((!setPadding && i!=0 && i!=values.length-1) || (values[i].getX() > GraphViewSeries.firstX && values[i].getX() < GraphViewSeries.lastX)) {
 //				LGtempPopupXYs.add(new PointF((float)values[i].getX(), (float)values[i].getY()));
 				if (lastEndX == 0 && lastEndY == 0) {
 					lastEndX = x;
