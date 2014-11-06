@@ -19,6 +19,7 @@
 
 package com.jjoe64.graphview;
 
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -554,18 +555,27 @@ abstract public class GraphView extends LinearLayout {
 		return fractionizer(formatLabel(value, isValueX), numOfFractionDigits);
 	}
 	
-	private String fractionizer(String value, int numOfFractionDigits) {
-		StringBuilder result = new StringBuilder();
-		String[] splittedValue = value.split("\\.");
-		result.append(splittedValue[0]);
-		if (splittedValue.length > 1 && numOfFractionDigits>0) {
-			result.append(".");
-			if (splittedValue[1].length() > numOfFractionDigits)
-				result.append(splittedValue[1].substring(0, numOfFractionDigits));
-			else
-				result.append(splittedValue[1]);
+	public static String repeatString(String s, int n) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < n; i++) {
+			sb.append(s);
 		}
-		return result.toString();
+
+		return sb.toString();
+	}
+	
+	private String fractionizer(String value, int numOfFractionDigits) {
+		String result = value;
+		String fraction = repeatString("0", numOfFractionDigits);
+		if (numOfFractionDigits > 0) {
+			try {
+				DecimalFormat form = new DecimalFormat("0." + fraction);
+				form.format(Double.parseDouble(value));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return result;
 	}
 
 	private String[] generateHorlabels(float graphwidth) {
