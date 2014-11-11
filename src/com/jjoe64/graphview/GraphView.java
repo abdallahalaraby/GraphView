@@ -37,6 +37,7 @@ import android.graphics.Paint.Align;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -144,7 +145,9 @@ abstract public class GraphView extends LinearLayout {
 //				canvas.drawText(horlabels[i], x, height - 4, paint);
 				canvas.save();
 				canvas.rotate(-90, x, height - (labelTextHeight/2));
-				canvas.drawText(horlabels[i], x, height - (labelTextHeight/2), paint);
+				String[] dateAndTime = horlabels[i].split(" ");
+				canvas.drawText(dateAndTime[0], x, height - (labelTextHeight/2), paint);
+				canvas.drawText(dateAndTime[1], x, height - (int)(labelTextHeight*2.5), paint);
 				canvas.restore();
 			}
 
